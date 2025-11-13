@@ -186,21 +186,30 @@ export const ConsultazioneIncassi = () => {
                   </td>
                 </tr>
               ) : (
-                filtered.map((i) => (
-                  <tr key={i.id} className="border-b last:border-b-0">
-                    <td className="px-3 py-2">
-                      {typeof i.data === "string"
-                        ? format(parseISO(i.data), "dd/MM/yyyy")
-                        : format(i.data, "dd/MM/yyyy")}
-                    </td>
+                <>
+                  {filtered.map((i) => (
+                    <tr key={i.id} className="border-b last:border-b-0">
+                      <td className="px-3 py-2">
+                        {typeof i.data === "string"
+                          ? format(parseISO(i.data), "dd/MM/yyyy")
+                          : format(i.data, "dd/MM/yyyy")}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono">
+                        {Number(i.importo).toFixed(2)}
+                      </td>
+                      <td className="px-3 py-2 text-center capitalize">
+                        {i.tipo}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-gray-100 font-bold">
+                    <td className="px-3 py-2 text-right">Totale</td>
                     <td className="px-3 py-2 text-right font-mono">
-                      {Number(i.importo).toFixed(2)}
+                      {totali.totale.toFixed(2)}
                     </td>
-                    <td className="px-3 py-2 text-center capitalize">
-                      {i.tipo}
-                    </td>
+                    <td className="px-3 py-2"></td>
                   </tr>
-                ))
+                </>
               )}
             </tbody>
           </table>

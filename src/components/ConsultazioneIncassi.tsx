@@ -9,6 +9,10 @@ import { useSession } from "./SessionContextProvider";
 
 const CARD_STYLE = "flex-1 min-w-[140px] bg-secondary p-4 rounded-lg shadow text-center";
 
+function onlyDate(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
 export const ConsultazioneIncassi = () => {
   const [periodo, setPeriodo] = React.useState("tutto");
   const [tipo, setTipo] = React.useState("tutti");
@@ -37,6 +41,7 @@ export const ConsultazioneIncassi = () => {
   let endDate = new Date();
   let useDateFilter = true;
   let filterOggi = false;
+  let filterManuale = false;
   if (periodo === "tutto") {
     useDateFilter = false;
   } else if (periodo === "oggi") {
@@ -48,6 +53,7 @@ export const ConsultazioneIncassi = () => {
     startDate = subDays(new Date(), 29);
     endDate = new Date();
   } else if (periodo === "manuale") {
+    filterManuale = true;
     startDate = new Date(da);
     endDate = new Date(a);
   }
@@ -59,6 +65,12 @@ export const ConsultazioneIncassi = () => {
       let inRange = true;
       if (filterOggi) {
         inRange = isSameDay(d, new Date());
+      } else if (filterManuale) {
+        // Confronta solo la parte di data, ignorando l'orario
+        const dDate = onlyDate(d);
+        const start = onlyDate(startDate);
+        const end = onlyDate(endDate);
+        inRange = dDate >= start && dDate <= end;
       } else if (useDateFilter) {
         inRange = isWithinInterval(d, { start: startDate, end: endDate });
       }

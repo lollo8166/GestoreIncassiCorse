@@ -386,8 +386,8 @@ export const ConsultazioneIncassi = () => {
         {pieData.length === 0 ? (
           <div className="text-gray-500 text-sm">Nessun dato da visualizzare.</div>
         ) : (
-          <div className="w-full max-w-xs h-64">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="w-full max-w-lg px-2 flex justify-center items-center">
+            <ResponsiveContainer width="100%" height={280}>
               <PieChart>
                 <Pie
                   data={pieData}
@@ -395,7 +395,7 @@ export const ConsultazioneIncassi = () => {
                   nameKey="tipo"
                   cx="50%"
                   cy="50%"
-                  outerRadius={90}
+                  outerRadius={110}
                   label={({ tipo, value }) => {
                     const percent = totali.totale > 0 ? (value / totali.totale) * 100 : 0;
                     return `${TIPO_LABELS[tipo]}: €${value.toFixed(2)} (${percent.toFixed(1)}%)`;

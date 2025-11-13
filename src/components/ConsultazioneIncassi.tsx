@@ -99,7 +99,7 @@ export const ConsultazioneIncassi = () => {
       Data: typeof i.data === "string"
         ? format(parseISO(i.data), "dd/MM/yyyy")
         : format(i.data, "dd/MM/yyyy"),
-      Importo: Number(i.importo).toFixed(2),
+      Importo: Number(i.importo).toFixed(2).replace(".", ","),
       Tipo: i.tipo.charAt(0).toUpperCase() + i.tipo.slice(1),
     }));
 

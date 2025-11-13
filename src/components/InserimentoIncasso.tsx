@@ -3,24 +3,39 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useSession } from "./SessionContextProvider";
 
 export const InserimentoIncasso = () => {
   const [data, setData] = React.useState<Date>(new Date());
   const [importo, setImporto] = React.useState("");
   const [tipo, setTipo] = React.useState("contanti");
   const [loading, setLoading] = React.useState(false);
+  const session = useSession();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Placeholder: qui andrà la logica di salvataggio
     if (!importo || isNaN(Number(importo))) {
       toast.error("Inserisci un importo valido.");
       return;
     }
-    toast.success("Incasso registrato (mock)!");
+    setLoading(true);
+    const { error } = await supabase.from("incassi").insert([
+      {
+        user_id: session?.user.id,
+        data: format(data, "yyyy-MM-dd"),
+        importo: Number(importo),
+        tipo,
+      },
+    ]);
+    setLoading(false);
+    if (error) {
+      toast.error("Errore nel salvataggio: " + error.message);
+      return;
+    }
+    toast.success("Incasso registrato!");
     setImporto("");
     setTipo("contanti");
     setData(new Date());
@@ -75,7 +90,7 @@ export const InserimentoIncasso = () => {
         </RadioGroup>
       </div>
       <Button type="submit" disabled={loading}>
-        Registra Incasso
+        {loading ? "Salvataggio..." : "Registra Incasso"}
       </Button>
     </form>
   );

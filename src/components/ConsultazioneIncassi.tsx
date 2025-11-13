@@ -3,23 +3,64 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format } from "date-fns";
+import { format, subDays, isWithinInterval, parseISO } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useSession } from "./SessionContextProvider";
 
 const CARD_STYLE = "flex-1 min-w-[140px] bg-secondary p-4 rounded-lg shadow text-center";
 
 export const ConsultazioneIncassi = () => {
-  // Placeholder: dati mock
   const [periodo, setPeriodo] = React.useState("oggi");
   const [tipo, setTipo] = React.useState("tutti");
   const [da, setDa] = React.useState(format(new Date(), "yyyy-MM-dd"));
   const [a, setA] = React.useState(format(new Date(), "yyyy-MM-dd"));
+  const [incassi, setIncassi] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const session = useSession();
 
-  // Placeholder: dati aggregati mock
+  React.useEffect(() => {
+    if (!session) return;
+    setLoading(true);
+    supabase
+      .from("incassi")
+      .select("*")
+      .eq("user_id", session.user.id)
+      .then(({ data, error }) => {
+        setLoading(false);
+        if (error) return;
+        setIncassi(data || []);
+      });
+  }, [session]);
+
+  // Calcolo intervallo date
+  let startDate = new Date();
+  let endDate = new Date();
+  if (periodo === "oggi") {
+    startDate = endDate = new Date();
+  } else if (periodo === "7") {
+    startDate = subDays(new Date(), 6);
+    endDate = new Date();
+  } else if (periodo === "30") {
+    startDate = subDays(new Date(), 29);
+    endDate = new Date();
+  } else if (periodo === "manuale") {
+    startDate = new Date(da);
+    endDate = new Date(a);
+  }
+
+  // Filtro e aggregazione
+  const filtered = incassi.filter((i) => {
+    const d = typeof i.data === "string" ? parseISO(i.data) : i.data;
+    const inRange = isWithinInterval(d, { start: startDate, end: endDate });
+    const tipoMatch = tipo === "tutti" ? true : i.tipo === tipo;
+    return inRange && tipoMatch;
+  });
+
   const totali = {
-    totale: 0,
-    contanti: 0,
-    pos: 0,
-    app: 0,
+    totale: filtered.reduce((sum, i) => sum + Number(i.importo), 0),
+    contanti: filtered.filter(i => i.tipo === "contanti").reduce((sum, i) => sum + Number(i.importo), 0),
+    pos: filtered.filter(i => i.tipo === "pos").reduce((sum, i) => sum + Number(i.importo), 0),
+    app: filtered.filter(i => i.tipo === "app").reduce((sum, i) => sum + Number(i.importo), 0),
   };
 
   return (
@@ -94,6 +135,7 @@ export const ConsultazioneIncassi = () => {
           <div className="text-2xl font-bold mt-2">€ {totali.app.toFixed(2)}</div>
         </div>
       </div>
+      {loading && <div className="mt-4 text-center text-gray-500">Caricamento dati...</div>}
     </div>
   );
 };

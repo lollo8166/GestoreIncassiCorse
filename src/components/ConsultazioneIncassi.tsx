@@ -10,7 +10,7 @@ import { useSession } from "./SessionContextProvider";
 const CARD_STYLE = "flex-1 min-w-[140px] bg-secondary p-4 rounded-lg shadow text-center";
 
 export const ConsultazioneIncassi = () => {
-  const [periodo, setPeriodo] = React.useState("oggi");
+  const [periodo, setPeriodo] = React.useState("tutto");
   const [tipo, setTipo] = React.useState("tutti");
   const [da, setDa] = React.useState(format(new Date(), "yyyy-MM-dd"));
   const [a, setA] = React.useState(format(new Date(), "yyyy-MM-dd"));
@@ -35,7 +35,10 @@ export const ConsultazioneIncassi = () => {
   // Calcolo intervallo date
   let startDate = new Date();
   let endDate = new Date();
-  if (periodo === "oggi") {
+  let useDateFilter = true;
+  if (periodo === "tutto") {
+    useDateFilter = false;
+  } else if (periodo === "oggi") {
     startDate = endDate = new Date();
   } else if (periodo === "7") {
     startDate = subDays(new Date(), 6);
@@ -52,7 +55,7 @@ export const ConsultazioneIncassi = () => {
   const filtered = incassi
     .filter((i) => {
       const d = typeof i.data === "string" ? parseISO(i.data) : i.data;
-      const inRange = isWithinInterval(d, { start: startDate, end: endDate });
+      const inRange = !useDateFilter || isWithinInterval(d, { start: startDate, end: endDate });
       const tipoMatch = tipo === "tutti" ? true : i.tipo === tipo;
       return inRange && tipoMatch;
     })
@@ -80,6 +83,7 @@ export const ConsultazioneIncassi = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="tutto">Tutto</SelectItem>
               <SelectItem value="oggi">Oggi</SelectItem>
               <SelectItem value="7">Ultimi 7 giorni</SelectItem>
               <SelectItem value="30">Ultimi 30 giorni</SelectItem>

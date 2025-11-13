@@ -85,7 +85,11 @@ export const InserimentoIncasso = () => {
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="app" id="app" />
-            <Label htmlFor="app">Applicazione</Label>
+            <Label htmlFor="app">APP</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="globix" id="globix" />
+            <Label htmlFor="globix">Globix</Label>
           </div>
         </RadioGroup>
       </div>

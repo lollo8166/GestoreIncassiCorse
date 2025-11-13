@@ -90,6 +90,7 @@ export const ConsultazioneIncassi = () => {
     contanti: filtered.filter(i => i.tipo === "contanti").reduce((sum, i) => sum + Number(i.importo), 0),
     pos: filtered.filter(i => i.tipo === "pos").reduce((sum, i) => sum + Number(i.importo), 0),
     app: filtered.filter(i => i.tipo === "app").reduce((sum, i) => sum + Number(i.importo), 0),
+    globix: filtered.filter(i => i.tipo === "globix").reduce((sum, i) => sum + Number(i.importo), 0),
   };
 
   // Funzione export Excel
@@ -100,7 +101,12 @@ export const ConsultazioneIncassi = () => {
         ? format(parseISO(i.data), "dd/MM/yyyy")
         : format(i.data, "dd/MM/yyyy"),
       Importo: Number(i.importo).toFixed(2).replace(".", ","),
-      Tipo: i.tipo.charAt(0).toUpperCase() + i.tipo.slice(1),
+      Tipo:
+        i.tipo === "app"
+          ? "APP"
+          : i.tipo === "globix"
+          ? "Globix"
+          : i.tipo.charAt(0).toUpperCase() + i.tipo.slice(1),
     }));
 
     if (dataToExport.length === 0) {
@@ -164,7 +170,8 @@ export const ConsultazioneIncassi = () => {
               <SelectItem value="tutti">Tutti</SelectItem>
               <SelectItem value="contanti">Contanti</SelectItem>
               <SelectItem value="pos">POS</SelectItem>
-              <SelectItem value="app">Applicazione</SelectItem>
+              <SelectItem value="app">APP</SelectItem>
+              <SelectItem value="globix">Globix</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -191,8 +198,12 @@ export const ConsultazioneIncassi = () => {
           <div className="text-2xl font-bold mt-2">€ {totali.pos.toFixed(2)}</div>
         </div>
         <div className={CARD_STYLE}>
-          <div className="text-lg font-semibold">Totale App</div>
+          <div className="text-lg font-semibold">Totale APP</div>
           <div className="text-2xl font-bold mt-2">€ {totali.app.toFixed(2)}</div>
+        </div>
+        <div className={CARD_STYLE}>
+          <div className="text-lg font-semibold">Totale Globix</div>
+          <div className="text-2xl font-bold mt-2">€ {totali.globix.toFixed(2)}</div>
         </div>
       </div>
       {loading && <div className="mt-4 text-center text-gray-500">Caricamento dati...</div>}
@@ -229,7 +240,11 @@ export const ConsultazioneIncassi = () => {
                         {Number(i.importo).toFixed(2)}
                       </td>
                       <td className="px-3 py-2 text-center capitalize">
-                        {i.tipo}
+                        {i.tipo === "app"
+                          ? "APP"
+                          : i.tipo === "globix"
+                          ? "Globix"
+                          : i.tipo.charAt(0).toUpperCase() + i.tipo.slice(1)}
                       </td>
                     </tr>
                   ))}

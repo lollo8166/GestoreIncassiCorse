@@ -177,14 +177,6 @@ export const ConsultazioneIncassi = () => {
           </Select>
         </div>
       </div>
-      <div className="flex justify-end mb-2">
-        <button
-          onClick={handleExportExcel}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow text-sm font-medium transition-colors"
-        >
-          Esporta Excel
-        </button>
-      </div>
       {/* Totale Incassato grande */}
       <div className="flex flex-col items-center gap-4 mb-4">
         <div className="w-full max-w-xs">
@@ -215,9 +207,18 @@ export const ConsultazioneIncassi = () => {
       </div>
       {loading && <div className="mt-4 text-center text-gray-500">Caricamento dati...</div>}
 
+      {/* Titolo e bottone esporta */}
+      <div className="mt-8 flex items-center justify-between mb-2">
+        <h2 className="text-lg font-semibold mb-0">Storico Incassi</h2>
+        <button
+          onClick={handleExportExcel}
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow text-sm font-medium transition-colors"
+        >
+          Esporta Excel
+        </button>
+      </div>
       {/* Tabella storico */}
-      <div className="mt-8">
-        <h2 className="text-lg font-semibold mb-2">Storico Incassi</h2>
+      <div>
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white rounded shadow text-sm">
             <thead>

@@ -49,12 +49,19 @@ export const ConsultazioneIncassi = () => {
   }
 
   // Filtro e aggregazione
-  const filtered = incassi.filter((i) => {
-    const d = typeof i.data === "string" ? parseISO(i.data) : i.data;
-    const inRange = isWithinInterval(d, { start: startDate, end: endDate });
-    const tipoMatch = tipo === "tutti" ? true : i.tipo === tipo;
-    return inRange && tipoMatch;
-  });
+  const filtered = incassi
+    .filter((i) => {
+      const d = typeof i.data === "string" ? parseISO(i.data) : i.data;
+      const inRange = isWithinInterval(d, { start: startDate, end: endDate });
+      const tipoMatch = tipo === "tutti" ? true : i.tipo === tipo;
+      return inRange && tipoMatch;
+    })
+    .sort((a, b) => {
+      // Ordina per data decrescente
+      const da = typeof a.data === "string" ? parseISO(a.data) : a.data;
+      const db = typeof b.data === "string" ? parseISO(b.data) : b.data;
+      return db.getTime() - da.getTime();
+    });
 
   const totali = {
     totale: filtered.reduce((sum, i) => sum + Number(i.importo), 0),
@@ -136,6 +143,47 @@ export const ConsultazioneIncassi = () => {
         </div>
       </div>
       {loading && <div className="mt-4 text-center text-gray-500">Caricamento dati...</div>}
+
+      {/* Tabella storico */}
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold mb-2">Storico Incassi</h2>
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white rounded shadow text-sm">
+            <thead>
+              <tr className="bg-gray-200">
+                <th className="px-3 py-2 text-left">Data</th>
+                <th className="px-3 py-2 text-right">Importo (€)</th>
+                <th className="px-3 py-2 text-center">Tipo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="text-center py-4 text-gray-500">
+                    Nessun incasso trovato per il periodo selezionato.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((i) => (
+                  <tr key={i.id} className="border-b last:border-b-0">
+                    <td className="px-3 py-2">
+                      {typeof i.data === "string"
+                        ? format(parseISO(i.data), "dd/MM/yyyy")
+                        : format(i.data, "dd/MM/yyyy")}
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono">
+                      {Number(i.importo).toFixed(2)}
+                    </td>
+                    <td className="px-3 py-2 text-center capitalize">
+                      {i.tipo}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };

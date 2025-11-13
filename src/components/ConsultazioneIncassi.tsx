@@ -9,6 +9,7 @@ import { useSession } from "./SessionContextProvider";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { Trash2, ArrowDown, ArrowUp } from "lucide-react";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 const CARD_STYLE = "flex-1 min-w-[140px] bg-secondary p-4 rounded-lg shadow text-center";
 const SMALL_CARD_STYLE = "bg-secondary p-3 rounded-lg shadow text-center flex flex-col items-center justify-center h-full";
@@ -19,6 +20,14 @@ function onlyDate(d: Date) {
 
 type SortKey = "data" | "importo" | "tipo";
 type SortDir = "asc" | "desc";
+
+const PIE_COLORS = ["#2563eb", "#059669", "#f59e42", "#a21caf"];
+const TIPO_LABELS: Record<string, string> = {
+  contanti: "Contanti",
+  pos: "POS",
+  app: "APP",
+  globix: "Globix",
+};
 
 export const ConsultazioneIncassi = () => {
   const [periodo, setPeriodo] = React.useState("tutto");
@@ -123,6 +132,14 @@ export const ConsultazioneIncassi = () => {
     globix: filtered.filter(i => i.tipo === "globix").reduce((sum, i) => sum + Number(i.importo), 0),
   };
 
+  // Dati per il grafico a torta
+  const pieData = [
+    { tipo: "contanti", value: totali.contanti },
+    { tipo: "pos", value: totali.pos },
+    { tipo: "app", value: totali.app },
+    { tipo: "globix", value: totali.globix },
+  ].filter(d => d.value > 0);
+
   // Funzione export Excel
   const handleExportExcel = () => {
     // Prepara i dati per Excel
@@ -166,6 +183,20 @@ export const ConsultazioneIncassi = () => {
       <ArrowUp size={14} className="inline-block ml-1 -mt-0.5" />
     ) : (
       <ArrowDown size={14} className="inline-block ml-1 -mt-0.5" />
+    );
+  }
+
+  // Tooltip personalizzato per la torta
+  function PieTooltip({ active, payload }: any) {
+    if (!active || !payload || !payload.length) return null;
+    const { tipo, value } = payload[0].payload;
+    const percent = totali.totale > 0 ? (value / totali.totale) * 100 : 0;
+    return (
+      <div className="bg-white border rounded shadow px-3 py-2 text-sm">
+        <div className="font-semibold">{TIPO_LABELS[tipo]}</div>
+        <div>Totale: € {value.toFixed(2)}</div>
+        <div>Percentuale: {percent.toFixed(1)}%</div>
+      </div>
     );
   }
 
@@ -348,6 +379,38 @@ export const ConsultazioneIncassi = () => {
             </tbody>
           </table>
         </div>
+      </div>
+      {/* Pie chart sotto la tabella */}
+      <div className="mt-8 flex flex-col items-center">
+        <h3 className="text-base font-semibold mb-2">Ripartizione per Tipo di Incasso</h3>
+        {pieData.length === 0 ? (
+          <div className="text-gray-500 text-sm">Nessun dato da visualizzare.</div>
+        ) : (
+          <div className="w-full max-w-xs h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  dataKey="value"
+                  nameKey="tipo"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                  label={({ tipo, value }) => {
+                    const percent = totali.totale > 0 ? (value / totali.totale) * 100 : 0;
+                    return `${TIPO_LABELS[tipo]}: €${value.toFixed(2)} (${percent.toFixed(1)}%)`;
+                  }}
+                  labelLine={false}
+                >
+                  {pieData.map((entry, idx) => (
+                    <Cell key={entry.tipo} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<PieTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
     </div>
   );

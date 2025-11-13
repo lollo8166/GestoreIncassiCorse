@@ -7,6 +7,8 @@ import { format, subDays, isWithinInterval, parseISO, isSameDay } from "date-fns
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "./SessionContextProvider";
 import * as XLSX from "xlsx";
+import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 
 const CARD_STYLE = "flex-1 min-w-[140px] bg-secondary p-4 rounded-lg shadow text-center";
 const SMALL_CARD_STYLE = "bg-secondary p-3 rounded-lg shadow text-center flex flex-col items-center justify-center h-full";
@@ -37,6 +39,19 @@ export const ConsultazioneIncassi = () => {
         setIncassi(data || []);
       });
   }, [session]);
+
+  // Funzione per cancellare un record
+  const handleDelete = async (id: string) => {
+    const conferma = window.confirm("Sei sicuro di voler cancellare questo incasso?");
+    if (!conferma) return;
+    const { error } = await supabase.from("incassi").delete().eq("id", id);
+    if (error) {
+      toast.error("Errore nella cancellazione: " + error.message);
+      return;
+    }
+    setIncassi((prev) => prev.filter((i) => i.id !== id));
+    toast.success("Incasso cancellato.");
+  };
 
   // Calcolo intervallo date
   let startDate = new Date();
@@ -226,19 +241,20 @@ export const ConsultazioneIncassi = () => {
                 <th className="px-3 py-2 text-left">Data</th>
                 <th className="px-3 py-2 text-right">Importo (€)</th>
                 <th className="px-3 py-2 text-center">Tipo</th>
+                <th className="px-3 py-2 text-center"></th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="text-center py-4 text-gray-500">
+                  <td colSpan={4} className="text-center py-4 text-gray-500">
                     Nessun incasso trovato per il periodo selezionato.
                   </td>
                 </tr>
               ) : (
                 <>
                   {filtered.map((i) => (
-                    <tr key={i.id} className="border-b last:border-b-0">
+                    <tr key={i.id} className="border-b last:border-b-0 group">
                       <td className="px-3 py-2">
                         {typeof i.data === "string"
                           ? format(parseISO(i.data), "dd/MM/yyyy")
@@ -254,6 +270,15 @@ export const ConsultazioneIncassi = () => {
                           ? "Globix"
                           : i.tipo.charAt(0).toUpperCase() + i.tipo.slice(1)}
                       </td>
+                      <td className="px-3 py-2 text-center">
+                        <button
+                          title="Cancella"
+                          onClick={() => handleDelete(i.id)}
+                          className="text-red-600 hover:text-red-800 transition-colors p-1"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                   <tr className="bg-gray-100 font-bold">
@@ -261,6 +286,7 @@ export const ConsultazioneIncassi = () => {
                     <td className="px-3 py-2 text-right font-mono">
                       {totali.totale.toFixed(2)}
                     </td>
+                    <td className="px-3 py-2"></td>
                     <td className="px-3 py-2"></td>
                   </tr>
                 </>

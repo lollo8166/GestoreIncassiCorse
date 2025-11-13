@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format, subDays, isWithinInterval, parseISO, isSameDay } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "./SessionContextProvider";
+import * as XLSX from "xlsx";
 
 const CARD_STYLE = "flex-1 min-w-[140px] bg-secondary p-4 rounded-lg shadow text-center";
 
@@ -91,6 +92,28 @@ export const ConsultazioneIncassi = () => {
     app: filtered.filter(i => i.tipo === "app").reduce((sum, i) => sum + Number(i.importo), 0),
   };
 
+  // Funzione export Excel
+  const handleExportExcel = () => {
+    // Prepara i dati per Excel
+    const dataToExport = filtered.map(i => ({
+      Data: typeof i.data === "string"
+        ? format(parseISO(i.data), "dd/MM/yyyy")
+        : format(i.data, "dd/MM/yyyy"),
+      Importo: Number(i.importo).toFixed(2),
+      Tipo: i.tipo.charAt(0).toUpperCase() + i.tipo.slice(1),
+    }));
+
+    if (dataToExport.length === 0) {
+      alert("Nessun dato da esportare per il periodo selezionato.");
+      return;
+    }
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Incassi");
+    XLSX.writeFile(wb, "incassi.xlsx");
+  };
+
   return (
     <div>
       <div className="flex flex-wrap gap-4 mb-6">
@@ -145,6 +168,14 @@ export const ConsultazioneIncassi = () => {
             </SelectContent>
           </Select>
         </div>
+      </div>
+      <div className="flex justify-end mb-2">
+        <button
+          onClick={handleExportExcel}
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow text-sm font-medium transition-colors"
+        >
+          Esporta Excel
+        </button>
       </div>
       <div className="flex flex-col md:flex-row gap-4">
         <div className={CARD_STYLE}>

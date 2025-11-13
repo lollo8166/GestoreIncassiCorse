@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format, subDays, isWithinInterval, parseISO } from "date-fns";
+import { format, subDays, isWithinInterval, parseISO, isSameDay } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "./SessionContextProvider";
 
@@ -36,10 +36,11 @@ export const ConsultazioneIncassi = () => {
   let startDate = new Date();
   let endDate = new Date();
   let useDateFilter = true;
+  let filterOggi = false;
   if (periodo === "tutto") {
     useDateFilter = false;
   } else if (periodo === "oggi") {
-    startDate = endDate = new Date();
+    filterOggi = true;
   } else if (periodo === "7") {
     startDate = subDays(new Date(), 6);
     endDate = new Date();
@@ -55,7 +56,12 @@ export const ConsultazioneIncassi = () => {
   const filtered = incassi
     .filter((i) => {
       const d = typeof i.data === "string" ? parseISO(i.data) : i.data;
-      const inRange = !useDateFilter || isWithinInterval(d, { start: startDate, end: endDate });
+      let inRange = true;
+      if (filterOggi) {
+        inRange = isSameDay(d, new Date());
+      } else if (useDateFilter) {
+        inRange = isWithinInterval(d, { start: startDate, end: endDate });
+      }
       const tipoMatch = tipo === "tutti" ? true : i.tipo === tipo;
       return inRange && tipoMatch;
     })

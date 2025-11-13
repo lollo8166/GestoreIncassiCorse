@@ -40,6 +40,14 @@ export const ConsultazioneIncassi = () => {
   const [sortDir, setSortDir] = React.useState<SortDir>("desc");
   const session = useSession();
 
+  // Per la responsività del grafico
+  const [windowWidth, setWindowWidth] = React.useState(window.innerWidth);
+  React.useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   React.useEffect(() => {
     if (!session) return;
     setLoading(true);
@@ -199,6 +207,11 @@ export const ConsultazioneIncassi = () => {
       </div>
     );
   }
+
+  // Responsività: nascondi etichette se troppo stretto (<500px)
+  const showPieLabels = windowWidth > 500;
+  // Raggio dinamico: più piccolo su mobile
+  const pieRadius = windowWidth > 700 ? 110 : windowWidth > 500 ? 80 : 60;
 
   return (
     <div>
@@ -381,13 +394,13 @@ export const ConsultazioneIncassi = () => {
         </div>
       </div>
       {/* Pie chart sotto la tabella */}
-      <div className="mt-8 flex flex-col items-center">
+      <div className="mt-8 flex flex-col items-center w-full">
         <h3 className="text-base font-semibold mb-2">Ripartizione per Tipo di Incasso</h3>
         {pieData.length === 0 ? (
           <div className="text-gray-500 text-sm">Nessun dato da visualizzare.</div>
         ) : (
-          <div className="w-full max-w-lg px-2 flex justify-center items-center">
-            <ResponsiveContainer width="100%" height={280}>
+          <div className="w-full" style={{ minHeight: 220 }}>
+            <ResponsiveContainer width="100%" height={320}>
               <PieChart>
                 <Pie
                   data={pieData}
@@ -395,12 +408,15 @@ export const ConsultazioneIncassi = () => {
                   nameKey="tipo"
                   cx="50%"
                   cy="50%"
-                  outerRadius={110}
-                  label={({ tipo, value }) => {
-                    const percent = totali.totale > 0 ? (value / totali.totale) * 100 : 0;
-                    return `${TIPO_LABELS[tipo]}: €${value.toFixed(2)} (${percent.toFixed(1)}%)`;
-                  }}
-                  labelLine={false}
+                  outerRadius={pieRadius}
+                  label={showPieLabels
+                    ? ({ tipo, value }) => {
+                        const percent = totali.totale > 0 ? (value / totali.totale) * 100 : 0;
+                        return `${TIPO_LABELS[tipo]}: €${value.toFixed(2)} (${percent.toFixed(1)}%)`;
+                      }
+                    : false
+                  }
+                  labelLine={showPieLabels}
                 >
                   {pieData.map((entry, idx) => (
                     <Cell key={entry.tipo} fill={PIE_COLORS[idx % PIE_COLORS.length]} />

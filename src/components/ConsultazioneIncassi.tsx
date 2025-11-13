@@ -9,6 +9,7 @@ import { useSession } from "./SessionContextProvider";
 import * as XLSX from "xlsx";
 
 const CARD_STYLE = "flex-1 min-w-[140px] bg-secondary p-4 rounded-lg shadow text-center";
+const SMALL_CARD_STYLE = "bg-secondary p-3 rounded-lg shadow text-center flex flex-col items-center justify-center h-full";
 
 function onlyDate(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -184,26 +185,32 @@ export const ConsultazioneIncassi = () => {
           Esporta Excel
         </button>
       </div>
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className={CARD_STYLE}>
-          <div className="text-lg font-semibold">Totale Incassato</div>
-          <div className="text-2xl font-bold mt-2">€ {totali.totale.toFixed(2)}</div>
+      {/* Totale Incassato grande */}
+      <div className="flex flex-col items-center gap-4 mb-4">
+        <div className="w-full max-w-xs">
+          <div className={CARD_STYLE}>
+            <div className="text-lg font-semibold">Totale Incassato</div>
+            <div className="text-2xl font-bold mt-2">€ {totali.totale.toFixed(2)}</div>
+          </div>
         </div>
-        <div className={CARD_STYLE}>
-          <div className="text-lg font-semibold">Totale Contanti</div>
-          <div className="text-2xl font-bold mt-2">€ {totali.contanti.toFixed(2)}</div>
-        </div>
-        <div className={CARD_STYLE}>
-          <div className="text-lg font-semibold">Totale POS</div>
-          <div className="text-2xl font-bold mt-2">€ {totali.pos.toFixed(2)}</div>
-        </div>
-        <div className={CARD_STYLE}>
-          <div className="text-lg font-semibold">Totale APP</div>
-          <div className="text-2xl font-bold mt-2">€ {totali.app.toFixed(2)}</div>
-        </div>
-        <div className={CARD_STYLE}>
-          <div className="text-lg font-semibold">Totale Globix</div>
-          <div className="text-2xl font-bold mt-2">€ {totali.globix.toFixed(2)}</div>
+        {/* Griglia 2x2 per i 4 metodi */}
+        <div className="grid grid-cols-2 grid-rows-2 gap-3 w-full max-w-xs">
+          <div className={SMALL_CARD_STYLE}>
+            <div className="text-sm font-medium">Contanti</div>
+            <div className="text-base font-semibold mt-1">€ {totali.contanti.toFixed(2)}</div>
+          </div>
+          <div className={SMALL_CARD_STYLE}>
+            <div className="text-sm font-medium">POS</div>
+            <div className="text-base font-semibold mt-1">€ {totali.pos.toFixed(2)}</div>
+          </div>
+          <div className={SMALL_CARD_STYLE}>
+            <div className="text-sm font-medium">APP</div>
+            <div className="text-base font-semibold mt-1">€ {totali.app.toFixed(2)}</div>
+          </div>
+          <div className={SMALL_CARD_STYLE}>
+            <div className="text-sm font-medium">Globix</div>
+            <div className="text-base font-semibold mt-1">€ {totali.globix.toFixed(2)}</div>
+          </div>
         </div>
       </div>
       {loading && <div className="mt-4 text-center text-gray-500">Caricamento dati...</div>}

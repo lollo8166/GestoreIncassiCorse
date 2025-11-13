@@ -93,11 +93,11 @@ export const ConsultazioneIncassi = () => {
 
   return (
     <div>
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div>
+      <div className="flex flex-wrap gap-4 mb-6">
+        <div className="min-w-[150px] flex-1">
           <Label>Periodo</Label>
           <Select value={periodo} onValueChange={setPeriodo}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full min-w-[120px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -110,7 +110,7 @@ export const ConsultazioneIncassi = () => {
           </Select>
         </div>
         {periodo === "manuale" && (
-          <div className="flex gap-2 items-end">
+          <div className="flex gap-2 items-end min-w-[260px]">
             <div>
               <Label>Da</Label>
               <Input
@@ -131,10 +131,10 @@ export const ConsultazioneIncassi = () => {
             </div>
           </div>
         )}
-        <div>
+        <div className="min-w-[150px] flex-1">
           <Label>Tipo Pagamento</Label>
           <Select value={tipo} onValueChange={setTipo}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full min-w-[120px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

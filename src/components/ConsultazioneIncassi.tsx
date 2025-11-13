@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "./SessionContextProvider";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Trash2, ArrowDown, ArrowUp } from "lucide-react";
 
 const CARD_STYLE = "flex-1 min-w-[140px] bg-secondary p-4 rounded-lg shadow text-center";
 const SMALL_CARD_STYLE = "bg-secondary p-3 rounded-lg shadow text-center flex flex-col items-center justify-center h-full";
@@ -17,6 +17,9 @@ function onlyDate(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
+type SortKey = "data" | "importo" | "tipo";
+type SortDir = "asc" | "desc";
+
 export const ConsultazioneIncassi = () => {
   const [periodo, setPeriodo] = React.useState("tutto");
   const [tipo, setTipo] = React.useState("tutti");
@@ -24,6 +27,8 @@ export const ConsultazioneIncassi = () => {
   const [a, setA] = React.useState(format(new Date(), "yyyy-MM-dd"));
   const [incassi, setIncassi] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [sortKey, setSortKey] = React.useState<SortKey>("data");
+  const [sortDir, setSortDir] = React.useState<SortDir>("desc");
   const session = useSession();
 
   React.useEffect(() => {
@@ -76,7 +81,7 @@ export const ConsultazioneIncassi = () => {
   }
 
   // Filtro e aggregazione
-  const filtered = incassi
+  let filtered = incassi
     .filter((i) => {
       const d = typeof i.data === "string" ? parseISO(i.data) : i.data;
       let inRange = true;
@@ -93,13 +98,22 @@ export const ConsultazioneIncassi = () => {
       }
       const tipoMatch = tipo === "tutti" ? true : i.tipo === tipo;
       return inRange && tipoMatch;
-    })
-    .sort((a, b) => {
-      // Ordina per data decrescente
+    });
+
+  // Ordinamento
+  filtered = filtered.sort((a, b) => {
+    let res = 0;
+    if (sortKey === "data") {
       const da = typeof a.data === "string" ? parseISO(a.data) : a.data;
       const db = typeof b.data === "string" ? parseISO(b.data) : b.data;
-      return db.getTime() - da.getTime();
-    });
+      res = da.getTime() - db.getTime();
+    } else if (sortKey === "importo") {
+      res = Number(a.importo) - Number(b.importo);
+    } else if (sortKey === "tipo") {
+      res = (a.tipo || "").localeCompare(b.tipo || "");
+    }
+    return sortDir === "asc" ? res : -res;
+  });
 
   const totali = {
     totale: filtered.reduce((sum, i) => sum + Number(i.importo), 0),
@@ -135,6 +149,25 @@ export const ConsultazioneIncassi = () => {
     XLSX.utils.book_append_sheet(wb, ws, "Incassi");
     XLSX.writeFile(wb, "incassi.xlsx");
   };
+
+  // Gestione click intestazione per ordinamento
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir(key === "data" ? "desc" : "asc");
+    }
+  }
+
+  function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
+    if (!active) return <span className="inline-block w-3" />;
+    return dir === "asc" ? (
+      <ArrowUp size={14} className="inline-block ml-1 -mt-0.5" />
+    ) : (
+      <ArrowDown size={14} className="inline-block ml-1 -mt-0.5" />
+    );
+  }
 
   return (
     <div>
@@ -238,9 +271,30 @@ export const ConsultazioneIncassi = () => {
           <table className="min-w-full bg-white rounded shadow text-sm">
             <thead>
               <tr className="bg-gray-200">
-                <th className="px-3 py-2 text-left">Data</th>
-                <th className="px-3 py-2 text-right">Importo (€)</th>
-                <th className="px-3 py-2 text-center">Tipo</th>
+                <th
+                  className="px-3 py-2 text-left cursor-pointer select-none"
+                  onClick={() => handleSort("data")}
+                  title="Ordina per data"
+                >
+                  Data
+                  <SortIcon active={sortKey === "data"} dir={sortDir} />
+                </th>
+                <th
+                  className="px-3 py-2 text-right cursor-pointer select-none"
+                  onClick={() => handleSort("importo")}
+                  title="Ordina per importo"
+                >
+                  Importo (€)
+                  <SortIcon active={sortKey === "importo"} dir={sortDir} />
+                </th>
+                <th
+                  className="px-3 py-2 text-center cursor-pointer select-none"
+                  onClick={() => handleSort("tipo")}
+                  title="Ordina per tipo"
+                >
+                  Tipo
+                  <SortIcon active={sortKey === "tipo"} dir={sortDir} />
+                </th>
                 <th className="px-3 py-2 text-center"></th>
               </tr>
             </thead>

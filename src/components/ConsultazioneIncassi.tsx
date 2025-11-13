@@ -210,8 +210,21 @@ export const ConsultazioneIncassi = () => {
 
   // Responsività: nascondi etichette se troppo stretto (<500px)
   const showPieLabels = windowWidth > 500;
-  // Raggio dinamico: più piccolo su mobile
-  const pieRadius = windowWidth > 700 ? 110 : windowWidth > 500 ? 80 : 60;
+  // Raggio dinamico: più grande su mobile
+  const pieRadius =
+    windowWidth > 700
+      ? 110
+      : windowWidth > 500
+      ? 90
+      : 90; // mobile: 90
+
+  // Altezza dinamica: più alta su mobile
+  const pieHeight =
+    windowWidth > 700
+      ? 320
+      : windowWidth > 500
+      ? 320
+      : 380; // mobile: 380px
 
   return (
     <div>
@@ -399,8 +412,8 @@ export const ConsultazioneIncassi = () => {
         {pieData.length === 0 ? (
           <div className="text-gray-500 text-sm">Nessun dato da visualizzare.</div>
         ) : (
-          <div className="w-full" style={{ minHeight: 220 }}>
-            <ResponsiveContainer width="100%" height={320}>
+          <div className="w-full" style={{ minHeight: pieHeight }}>
+            <ResponsiveContainer width="100%" height={pieHeight}>
               <PieChart>
                 <Pie
                   data={pieData}

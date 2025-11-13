@@ -14,9 +14,14 @@ export const UserMenu = () => {
   if (!email) return null;
 
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-sm text-gray-700">{email}</span>
-      <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-1">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+      <span className="text-sm text-gray-700 text-center sm:text-right w-full sm:w-auto">{email}</span>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleLogout}
+        className="flex items-center gap-1 justify-center"
+      >
         <LogOut size={16} className="mr-1" />
         Logout
       </Button>

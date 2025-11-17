@@ -73,7 +73,7 @@ export const InserimentoIncasso = () => {
         <RadioGroup
           value={tipo}
           onValueChange={setTipo}
-          className="flex flex-row gap-4 mt-2 flex-wrap"
+          className="grid grid-cols-2 gap-2 mt-2"
         >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="contanti" id="contanti" />

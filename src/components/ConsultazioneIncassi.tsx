@@ -2,7 +2,7 @@ import * as React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { format, subDays, isWithinInterval, parseISO, isSameDay } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "./SessionContextProvider";
@@ -27,6 +27,7 @@ const TIPO_LABELS: Record<string, string> = {
   pos: "POS",
   app: "APP",
   globix: "Globix",
+  tutti: "Tutti",
 };
 
 export const ConsultazioneIncassi = () => {
@@ -232,18 +233,17 @@ export const ConsultazioneIncassi = () => {
       <div className="flex flex-wrap gap-4 mb-6">
         <div className="min-w-[150px] flex-1">
           <Label>Periodo</Label>
-          <Select value={periodo} onValueChange={setPeriodo}>
-            <SelectTrigger className="w-full min-w-[120px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="tutto">Tutto</SelectItem>
-              <SelectItem value="oggi">Oggi</SelectItem>
-              <SelectItem value="7">Ultimi 7 giorni</SelectItem>
-              <SelectItem value="30">Ultimi 30 giorni</SelectItem>
-              <SelectItem value="manuale">Da/A</SelectItem>
-            </SelectContent>
-          </Select>
+          <select
+            className="w-full min-w-[120px] border rounded px-2 py-2"
+            value={periodo}
+            onChange={e => setPeriodo(e.target.value)}
+          >
+            <option value="tutto">Tutto</option>
+            <option value="oggi">Oggi</option>
+            <option value="7">Ultimi 7 giorni</option>
+            <option value="30">Ultimi 30 giorni</option>
+            <option value="manuale">Da/A</option>
+          </select>
         </div>
         {periodo === "manuale" && (
           <div className="flex gap-2 items-end min-w-[260px]">
@@ -267,23 +267,35 @@ export const ConsultazioneIncassi = () => {
             </div>
           </div>
         )}
-        {/* Tipo Pagamento su due righe su mobile */}
+        {/* Tipo Pagamento in griglia 2x2 su mobile, label grandi */}
         <div className="min-w-[150px] flex-1">
           <Label>Tipo Pagamento</Label>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 mt-2">
-            <Select value={tipo} onValueChange={setTipo}>
-              <SelectTrigger className="w-full min-w-[120px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tutti">Tutti</SelectItem>
-                <SelectItem value="contanti">Contanti</SelectItem>
-                <SelectItem value="pos">POS</SelectItem>
-                <SelectItem value="app">APP</SelectItem>
-                <SelectItem value="globix">Globix</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <RadioGroup
+            value={tipo}
+            onValueChange={setTipo}
+            className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="tutti" id="tutti" />
+              <Label htmlFor="tutti" className="text-base font-semibold">Tutti</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="contanti" id="contanti" />
+              <Label htmlFor="contanti" className="text-base font-semibold">Contanti</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="pos" id="pos" />
+              <Label htmlFor="pos" className="text-base font-semibold">POS</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="app" id="app" />
+              <Label htmlFor="app" className="text-base font-semibold">APP</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="globix" id="globix" />
+              <Label htmlFor="globix" className="text-base font-semibold">Globix</Label>
+            </div>
+          </RadioGroup>
         </div>
       </div>
       {/* Totale Incassato grande */}

@@ -267,20 +267,23 @@ export const ConsultazioneIncassi = () => {
             </div>
           </div>
         )}
+        {/* Tipo Pagamento su due righe su mobile */}
         <div className="min-w-[150px] flex-1">
           <Label>Tipo Pagamento</Label>
-          <Select value={tipo} onValueChange={setTipo}>
-            <SelectTrigger className="w-full min-w-[120px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="tutti">Tutti</SelectItem>
-              <SelectItem value="contanti">Contanti</SelectItem>
-              <SelectItem value="pos">POS</SelectItem>
-              <SelectItem value="app">APP</SelectItem>
-              <SelectItem value="globix">Globix</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 mt-2">
+            <Select value={tipo} onValueChange={setTipo}>
+              <SelectTrigger className="w-full min-w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tutti">Tutti</SelectItem>
+                <SelectItem value="contanti">Contanti</SelectItem>
+                <SelectItem value="pos">POS</SelectItem>
+                <SelectItem value="app">APP</SelectItem>
+                <SelectItem value="globix">Globix</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
       {/* Totale Incassato grande */}

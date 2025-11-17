@@ -309,19 +309,19 @@ export const ConsultazioneIncassi = () => {
         {/* Griglia 2x2 per i 4 metodi */}
         <div className="grid grid-cols-2 grid-rows-2 gap-3 w-full max-w-xs">
           <div className={SMALL_CARD_STYLE}>
-            <div className="text-sm font-medium">Contanti</div>
+            <div className="text-lg font-bold py-2">Contanti</div>
             <div className="text-base font-semibold mt-1">€ {totali.contanti.toFixed(2)}</div>
           </div>
           <div className={SMALL_CARD_STYLE}>
-            <div className="text-sm font-medium">POS</div>
+            <div className="text-lg font-bold py-2">POS</div>
             <div className="text-base font-semibold mt-1">€ {totali.pos.toFixed(2)}</div>
           </div>
           <div className={SMALL_CARD_STYLE}>
-            <div className="text-sm font-medium">APP</div>
+            <div className="text-lg font-bold py-2">APP</div>
             <div className="text-base font-semibold mt-1">€ {totali.app.toFixed(2)}</div>
           </div>
           <div className={SMALL_CARD_STYLE}>
-            <div className="text-sm font-medium">Globix</div>
+            <div className="text-lg font-bold py-2">Globix</div>
             <div className="text-base font-semibold mt-1">€ {totali.globix.toFixed(2)}</div>
           </div>
         </div>

@@ -267,7 +267,7 @@ export const ConsultazioneIncassi = () => {
             </div>
           </div>
         )}
-        {/* Tipo Pagamento in griglia 2x2 su mobile, label grandi */}
+        {/* Tipo Pagamento in griglia 2x2 su mobile, label molto grandi */}
         <div className="min-w-[150px] flex-1">
           <Label>Tipo Pagamento</Label>
           <RadioGroup
@@ -277,23 +277,23 @@ export const ConsultazioneIncassi = () => {
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="tutti" id="tutti" />
-              <Label htmlFor="tutti" className="text-base font-semibold">Tutti</Label>
+              <Label htmlFor="tutti" className="text-lg font-bold py-2">Tutti</Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="contanti" id="contanti" />
-              <Label htmlFor="contanti" className="text-base font-semibold">Contanti</Label>
+              <Label htmlFor="contanti" className="text-lg font-bold py-2">Contanti</Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="pos" id="pos" />
-              <Label htmlFor="pos" className="text-base font-semibold">POS</Label>
+              <Label htmlFor="pos" className="text-lg font-bold py-2">POS</Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="app" id="app" />
-              <Label htmlFor="app" className="text-base font-semibold">APP</Label>
+              <Label htmlFor="app" className="text-lg font-bold py-2">APP</Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="globix" id="globix" />
-              <Label htmlFor="globix" className="text-base font-semibold">Globix</Label>
+              <Label htmlFor="globix" className="text-lg font-bold py-2">Globix</Label>
             </div>
           </RadioGroup>
         </div>

@@ -30,7 +30,8 @@ const TIPO_LABELS: Record<string, string> = {
 };
 
 export const ConsultazioneIncassi = () => {
-  const [periodo, setPeriodo] = React.useState("tutto");
+  // Imposta il periodo di default su "oggi"
+  const [periodo, setPeriodo] = React.useState("oggi");
   const [tipo, setTipo] = React.useState("tutti");
   const [da, setDa] = React.useState(format(new Date(), "yyyy-MM-dd"));
   const [a, setA] = React.useState(format(new Date(), "yyyy-MM-dd"));

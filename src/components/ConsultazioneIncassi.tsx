@@ -8,8 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "./SessionContextProvider";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
-import { Trash2, ArrowDown, ArrowUp, ChevronLeft, ChevronRight } from "lucide-react";
+import { Trash2, ArrowDown, ArrowUp, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { Button } from "@/components/ui/button";
 
 const CARD_STYLE = "flex-1 min-w-[140px] bg-secondary p-4 rounded-lg shadow text-center";
 const SMALL_CARD_STYLE = "bg-secondary p-3 rounded-lg shadow text-center flex flex-col items-center justify-center h-full";
@@ -68,6 +69,14 @@ function saveFilters(filters: { periodo: string; tipo: string; da: string; a: st
     // ignora errori
   }
 }
+
+const DEFAULT_FILTERS = {
+  periodo: "oggi",
+  tipo: "tutti",
+  da: format(new Date(), "yyyy-MM-dd"),
+  a: format(new Date(), "yyyy-MM-dd"),
+  pageSize: 10,
+};
 
 export const ConsultazioneIncassi = () => {
   // Inizializza i filtri da localStorage
@@ -292,8 +301,31 @@ export const ConsultazioneIncassi = () => {
   const handlePrevPage = () => setPage((p) => Math.max(1, p - 1));
   const handleNextPage = () => setPage((p) => Math.min(pageCount, p + 1));
 
+  // Pulsante reset filtri
+  const handleResetFilters = () => {
+    setPeriodo(DEFAULT_FILTERS.periodo);
+    setTipo(DEFAULT_FILTERS.tipo);
+    setDa(DEFAULT_FILTERS.da);
+    setA(DEFAULT_FILTERS.a);
+    setPageSize(DEFAULT_FILTERS.pageSize);
+    setPage(1);
+    saveFilters(DEFAULT_FILTERS);
+  };
+
   return (
     <div>
+      {/* Pulsante reset filtri */}
+      <div className="flex justify-end mb-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleResetFilters}
+          className="flex items-center gap-1"
+        >
+          <RotateCcw size={16} className="mr-1" />
+          Reset filtri
+        </Button>
+      </div>
       {/* FILTRI IN ALTO */}
       <div className="flex flex-wrap gap-4 mb-6">
         <div className="min-w-[150px] flex-1">

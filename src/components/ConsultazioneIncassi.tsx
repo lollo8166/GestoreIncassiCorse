@@ -322,19 +322,19 @@ export const ConsultazioneIncassi = () => {
   function handleTipoChange(val: string) {
     if (val === "tutti") {
       setTipi([]);
+      return;
+    }
+    let newTipi = [...tipi];
+    if (newTipi.includes(val)) {
+      newTipi = newTipi.filter((t) => t !== val);
     } else {
-      let newTipi = [...tipi];
-      if (newTipi.includes(val)) {
-        newTipi = newTipi.filter((t) => t !== val);
-      } else {
-        newTipi.push(val);
-      }
-      // Se tutte selezionate, equivale a "tutti"
-      if (newTipi.length === TIPO_OPTIONS.length) {
-        setTipi([]);
-      } else {
-        setTipi(newTipi);
-      }
+      newTipi.push(val);
+    }
+    // Se tutte selezionate, equivale a "tutti" (quindi tipi = [])
+    if (newTipi.length === TIPO_OPTIONS.length) {
+      setTipi([]);
+    } else {
+      setTipi(newTipi);
     }
   }
 
@@ -427,7 +427,6 @@ export const ConsultazioneIncassi = () => {
                   className={`flex items-center space-x-2 px-2 py-2 rounded border ${checked ? "border-blue-600 bg-blue-50" : "border-gray-300 bg-white"} transition-colors`}
                   onClick={() => handleTipoChange(opt.value)}
                   aria-pressed={checked}
-                  disabled={isTutti}
                 >
                   {checked ? <CheckSquare size={18} className="text-blue-600" /> : <Square size={18} />}
                   <span className="text-lg font-bold">{opt.label}</span>

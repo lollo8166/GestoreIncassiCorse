@@ -394,7 +394,7 @@ export const ConsultazioneIncassi = () => {
         )}
         {/* Dropdown page size: ora sopra Tipo Pagamento su mobile */}
         <div className="w-full sm:w-auto flex flex-col">
-          <Label>Corse per pagina</Label>
+          <Label className="mt-2 sm:mt-0">Corse per pagina</Label>
           <select
             className="w-full min-w-[80px] border rounded px-2 py-2"
             value={pageSize}

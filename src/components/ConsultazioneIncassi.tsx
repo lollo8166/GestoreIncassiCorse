@@ -2,13 +2,12 @@ import * as React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { format, subDays, isWithinInterval, parseISO, isSameDay } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "./SessionContextProvider";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
-import { Trash2, ArrowDown, ArrowUp, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
+import { Trash2, ArrowDown, ArrowUp, ChevronLeft, ChevronRight, RotateCcw, CheckSquare, Square } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { Button } from "@/components/ui/button";
 
@@ -28,8 +27,14 @@ const TIPO_LABELS: Record<string, string> = {
   pos: "POS",
   app: "APP",
   globix: "Globix",
-  tutti: "Tutti",
 };
+
+const TIPO_OPTIONS = [
+  { value: "contanti", label: "Contanti" },
+  { value: "pos", label: "POS" },
+  { value: "app", label: "APP" },
+  { value: "globix", label: "Globix" },
+];
 
 const PAGE_SIZE_OPTIONS = [10, 50, 100];
 
@@ -41,10 +46,11 @@ function getInitialFilters() {
     const saved = localStorage.getItem(FILTERS_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      // fallback ai valori di default se mancano
       return {
         periodo: parsed.periodo ?? "oggi",
-        tipo: parsed.tipo ?? "tutti",
+        tipi: Array.isArray(parsed.tipi)
+          ? parsed.tipi
+          : (parsed.tipo && parsed.tipo !== "tutti" ? [parsed.tipo] : []),
         da: parsed.da ?? format(new Date(), "yyyy-MM-dd"),
         a: parsed.a ?? format(new Date(), "yyyy-MM-dd"),
         pageSize: parsed.pageSize ?? 10,
@@ -55,14 +61,14 @@ function getInitialFilters() {
   }
   return {
     periodo: "oggi",
-    tipo: "tutti",
+    tipi: [],
     da: format(new Date(), "yyyy-MM-dd"),
     a: format(new Date(), "yyyy-MM-dd"),
     pageSize: 10,
   };
 }
 
-function saveFilters(filters: { periodo: string; tipo: string; da: string; a: string; pageSize: number }) {
+function saveFilters(filters: { periodo: string; tipi: string[]; da: string; a: string; pageSize: number }) {
   try {
     localStorage.setItem(FILTERS_KEY, JSON.stringify(filters));
   } catch {
@@ -72,7 +78,7 @@ function saveFilters(filters: { periodo: string; tipo: string; da: string; a: st
 
 const DEFAULT_FILTERS = {
   periodo: "oggi",
-  tipo: "tutti",
+  tipi: [],
   da: format(new Date(), "yyyy-MM-dd"),
   a: format(new Date(), "yyyy-MM-dd"),
   pageSize: 10,
@@ -82,7 +88,7 @@ export const ConsultazioneIncassi = () => {
   // Inizializza i filtri da localStorage
   const initial = getInitialFilters();
   const [periodo, setPeriodo] = React.useState(initial.periodo);
-  const [tipo, setTipo] = React.useState(initial.tipo);
+  const [tipi, setTipi] = React.useState<string[]>(initial.tipi);
   const [da, setDa] = React.useState(initial.da);
   const [a, setA] = React.useState(initial.a);
   const [pageSize, setPageSize] = React.useState(initial.pageSize);
@@ -107,13 +113,13 @@ export const ConsultazioneIncassi = () => {
 
   // Salva i filtri ogni volta che cambiano
   React.useEffect(() => {
-    saveFilters({ periodo, tipo, da, a, pageSize });
-  }, [periodo, tipo, da, a, pageSize]);
+    saveFilters({ periodo, tipi, da, a, pageSize });
+  }, [periodo, tipi, da, a, pageSize]);
 
   // Reset pagina quando cambiano i filtri
   React.useEffect(() => {
     setPage(1);
-  }, [periodo, tipo, da, a, session, pageSize]);
+  }, [periodo, tipi, da, a, session, pageSize]);
 
   // Caricamento dati paginati
   React.useEffect(() => {
@@ -155,23 +161,23 @@ export const ConsultazioneIncassi = () => {
   }
 
   // Filtro e aggregazione lato client
-  let filtered = incassi
-    .filter((i) => {
-      const d = typeof i.data === "string" ? parseISO(i.data) : i.data;
-      let inRange = true;
-      if (filterOggi) {
-        inRange = isSameDay(d, new Date());
-      } else if (filterManuale) {
-        const dDate = onlyDate(d);
-        const start = onlyDate(startDate);
-        const end = onlyDate(endDate);
-        inRange = dDate >= start && dDate <= end;
-      } else if (useDateFilter) {
-        inRange = isWithinInterval(d, { start: startDate, end: endDate });
-      }
-      const tipoMatch = tipo === "tutti" ? true : i.tipo === tipo;
-      return inRange && tipoMatch;
-    });
+  let filtered = incassi.filter((i) => {
+    const d = typeof i.data === "string" ? parseISO(i.data) : i.data;
+    let inRange = true;
+    if (filterOggi) {
+      inRange = isSameDay(d, new Date());
+    } else if (filterManuale) {
+      const dDate = onlyDate(d);
+      const start = onlyDate(startDate);
+      const end = onlyDate(endDate);
+      inRange = dDate >= start && dDate <= end;
+    } else if (useDateFilter) {
+      inRange = isWithinInterval(d, { start: startDate, end: endDate });
+    }
+    // Multi-select: se tipi è vuoto o contiene tutte le opzioni, mostra tutto
+    if (!tipi || tipi.length === 0 || tipi.length === TIPO_OPTIONS.length) return inRange;
+    return inRange && tipi.includes(i.tipo);
+  });
 
   // Ordinamento
   filtered = filtered.sort((a, b) => {
@@ -304,13 +310,35 @@ export const ConsultazioneIncassi = () => {
   // Pulsante reset filtri
   const handleResetFilters = () => {
     setPeriodo(DEFAULT_FILTERS.periodo);
-    setTipo(DEFAULT_FILTERS.tipo);
+    setTipi(DEFAULT_FILTERS.tipi);
     setDa(DEFAULT_FILTERS.da);
     setA(DEFAULT_FILTERS.a);
     setPageSize(DEFAULT_FILTERS.pageSize);
     setPage(1);
     saveFilters(DEFAULT_FILTERS);
   };
+
+  // Multi-select Tipo Pagamento
+  function handleTipoChange(val: string) {
+    if (val === "tutti") {
+      setTipi([]);
+    } else {
+      let newTipi = [...tipi];
+      if (newTipi.includes(val)) {
+        newTipi = newTipi.filter((t) => t !== val);
+      } else {
+        newTipi.push(val);
+      }
+      // Se tutte selezionate, equivale a "tutti"
+      if (newTipi.length === TIPO_OPTIONS.length) {
+        setTipi([]);
+      } else {
+        setTipi(newTipi);
+      }
+    }
+  }
+
+  const isTutti = !tipi || tipi.length === 0 || tipi.length === TIPO_OPTIONS.length;
 
   return (
     <div>
@@ -377,35 +405,36 @@ export const ConsultazioneIncassi = () => {
             ))}
           </select>
         </div>
-        {/* Tipo Pagamento */}
+        {/* Tipo Pagamento Multi-select */}
         <div className="min-w-[150px] flex-1">
           <Label>Tipo Pagamento</Label>
-          <RadioGroup
-            value={tipo}
-            onValueChange={setTipo}
-            className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="tutti" id="tutti" />
-              <Label htmlFor="tutti" className="text-lg font-bold py-2">Tutti</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="contanti" id="contanti" />
-              <Label htmlFor="contanti" className="text-lg font-bold py-2">Contanti</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="pos" id="pos" />
-              <Label htmlFor="pos" className="text-lg font-bold py-2">POS</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="app" id="app" />
-              <Label htmlFor="app" className="text-lg font-bold py-2">APP</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="globix" id="globix" />
-              <Label htmlFor="globix" className="text-lg font-bold py-2">Globix</Label>
-            </div>
-          </RadioGroup>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+            <button
+              type="button"
+              className={`flex items-center space-x-2 px-2 py-2 rounded border ${isTutti ? "border-blue-600 bg-blue-50" : "border-gray-300 bg-white"} transition-colors`}
+              onClick={() => handleTipoChange("tutti")}
+              aria-pressed={isTutti}
+            >
+              {isTutti ? <CheckSquare size={18} className="text-blue-600" /> : <Square size={18} />}
+              <span className="text-lg font-bold">Tutti</span>
+            </button>
+            {TIPO_OPTIONS.map(opt => {
+              const checked = tipi.includes(opt.value);
+              return (
+                <button
+                  type="button"
+                  key={opt.value}
+                  className={`flex items-center space-x-2 px-2 py-2 rounded border ${checked ? "border-blue-600 bg-blue-50" : "border-gray-300 bg-white"} transition-colors`}
+                  onClick={() => handleTipoChange(opt.value)}
+                  aria-pressed={checked}
+                  disabled={isTutti}
+                >
+                  {checked ? <CheckSquare size={18} className="text-blue-600" /> : <Square size={18} />}
+                  <span className="text-lg font-bold">{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
       {/* CARDS DEI TOTALI */}

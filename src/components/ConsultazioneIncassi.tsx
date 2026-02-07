@@ -140,6 +140,7 @@ export const ConsultazioneIncassi = () => {
     pos: filtered.filter(i => i.tipo === "pos").reduce((sum, i) => sum + Number(i.importo), 0),
     app: filtered.filter(i => i.tipo === "app").reduce((sum, i) => sum + Number(i.importo), 0),
     globix: filtered.filter(i => i.tipo === "globix").reduce((sum, i) => sum + Number(i.importo), 0),
+    corse: filtered.length,
   };
 
   // Dati per il grafico a torta
@@ -230,6 +231,37 @@ export const ConsultazioneIncassi = () => {
 
   return (
     <div>
+      <div className="flex flex-col items-center gap-4 mb-4">
+        <div className="w-full max-w-xs flex flex-col sm:flex-row gap-4">
+          <div className={CARD_STYLE}>
+            <div className="text-lg font-semibold">Totale Incassato</div>
+            <div className="text-2xl font-bold mt-2">€ {totali.totale.toFixed(2)}</div>
+          </div>
+          <div className={CARD_STYLE}>
+            <div className="text-lg font-semibold">Totale Corse</div>
+            <div className="text-2xl font-bold mt-2">{totali.corse}</div>
+          </div>
+        </div>
+        {/* Griglia 2x2 per i 4 metodi */}
+        <div className="grid grid-cols-2 grid-rows-2 gap-3 w-full max-w-xs">
+          <div className={SMALL_CARD_STYLE}>
+            <div className="text-lg font-bold py-2">Contanti</div>
+            <div className="text-base font-semibold mt-1">€ {totali.contanti.toFixed(2)}</div>
+          </div>
+          <div className={SMALL_CARD_STYLE}>
+            <div className="text-lg font-bold py-2">POS</div>
+            <div className="text-base font-semibold mt-1">€ {totali.pos.toFixed(2)}</div>
+          </div>
+          <div className={SMALL_CARD_STYLE}>
+            <div className="text-lg font-bold py-2">APP</div>
+            <div className="text-base font-semibold mt-1">€ {totali.app.toFixed(2)}</div>
+          </div>
+          <div className={SMALL_CARD_STYLE}>
+            <div className="text-lg font-bold py-2">Globix</div>
+            <div className="text-base font-semibold mt-1">€ {totali.globix.toFixed(2)}</div>
+          </div>
+        </div>
+      </div>
       <div className="flex flex-wrap gap-4 mb-6">
         <div className="min-w-[150px] flex-1">
           <Label>Periodo</Label>
@@ -296,34 +328,6 @@ export const ConsultazioneIncassi = () => {
               <Label htmlFor="globix" className="text-lg font-bold py-2">Globix</Label>
             </div>
           </RadioGroup>
-        </div>
-      </div>
-      {/* Totale Incassato grande */}
-      <div className="flex flex-col items-center gap-4 mb-4">
-        <div className="w-full max-w-xs">
-          <div className={CARD_STYLE}>
-            <div className="text-lg font-semibold">Totale Incassato</div>
-            <div className="text-2xl font-bold mt-2">€ {totali.totale.toFixed(2)}</div>
-          </div>
-        </div>
-        {/* Griglia 2x2 per i 4 metodi */}
-        <div className="grid grid-cols-2 grid-rows-2 gap-3 w-full max-w-xs">
-          <div className={SMALL_CARD_STYLE}>
-            <div className="text-lg font-bold py-2">Contanti</div>
-            <div className="text-base font-semibold mt-1">€ {totali.contanti.toFixed(2)}</div>
-          </div>
-          <div className={SMALL_CARD_STYLE}>
-            <div className="text-lg font-bold py-2">POS</div>
-            <div className="text-base font-semibold mt-1">€ {totali.pos.toFixed(2)}</div>
-          </div>
-          <div className={SMALL_CARD_STYLE}>
-            <div className="text-lg font-bold py-2">APP</div>
-            <div className="text-base font-semibold mt-1">€ {totali.app.toFixed(2)}</div>
-          </div>
-          <div className={SMALL_CARD_STYLE}>
-            <div className="text-lg font-bold py-2">Globix</div>
-            <div className="text-base font-semibold mt-1">€ {totali.globix.toFixed(2)}</div>
-          </div>
         </div>
       </div>
       {loading && <div className="mt-4 text-center text-gray-500">Caricamento dati...</div>}

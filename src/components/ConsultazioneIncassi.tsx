@@ -57,6 +57,7 @@ export const ConsultazioneIncassi = () => {
       .from("incassi")
       .select("*")
       .eq("user_id", session.user.id)
+      .range(0, 9999) // <-- Mostra fino a 10.000 corse
       .then(({ data, error }) => {
         setLoading(false);
         if (error) return;

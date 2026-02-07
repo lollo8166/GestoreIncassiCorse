@@ -67,7 +67,6 @@ export const ConsultazioneIncassi = () => {
     if (!session) return;
     setLoading(true);
 
-    // Recupera tutti i record dell'utente (solo id, data, importo, tipo) per filtrare lato client
     supabase
       .from("incassi")
       .select("*", { count: "exact" })
@@ -110,7 +109,6 @@ export const ConsultazioneIncassi = () => {
       if (filterOggi) {
         inRange = isSameDay(d, new Date());
       } else if (filterManuale) {
-        // Confronta solo la parte di data, ignorando l'orario
         const dDate = onlyDate(d);
         const start = onlyDate(startDate);
         const end = onlyDate(endDate);
@@ -161,7 +159,6 @@ export const ConsultazioneIncassi = () => {
 
   // Funzione export Excel
   const handleExportExcel = () => {
-    // Prepara i dati per Excel
     const dataToExport = filtered.map(i => ({
       Data: typeof i.data === "string"
         ? format(parseISO(i.data), "dd/MM/yyyy")
@@ -186,7 +183,6 @@ export const ConsultazioneIncassi = () => {
     XLSX.writeFile(wb, "incassi.xlsx");
   };
 
-  // Gestione click intestazione per ordinamento
   function handleSort(key: SortKey) {
     if (sortKey === key) {
       setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -205,7 +201,6 @@ export const ConsultazioneIncassi = () => {
     );
   }
 
-  // Tooltip personalizzato per la torta
   function PieTooltip({ active, payload }: any) {
     if (!active || !payload || !payload.length) return null;
     const { tipo, value } = payload[0].payload;
@@ -219,25 +214,20 @@ export const ConsultazioneIncassi = () => {
     );
   }
 
-  // Responsività: nascondi etichette se troppo stretto (<500px)
   const showPieLabels = windowWidth > 500;
-  // Raggio dinamico: più grande su mobile
   const pieRadius =
     windowWidth > 700
       ? 110
       : windowWidth > 500
       ? 90
-      : 90; // mobile: 90
-
-  // Altezza dinamica: più alta su mobile
+      : 90;
   const pieHeight =
     windowWidth > 700
       ? 320
       : windowWidth > 500
       ? 320
-      : 380; // mobile: 380px
+      : 380;
 
-  // Funzione per cancellare un record
   const handleDelete = async (id: string) => {
     const conferma = window.confirm("Sei sicuro di voler cancellare questo incasso?");
     if (!conferma) return;
@@ -250,13 +240,11 @@ export const ConsultazioneIncassi = () => {
     toast.success("Incasso cancellato.");
   };
 
-  // Gestione cambio pageSize
   const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setPageSize(Number(e.target.value));
     setPage(1);
   };
 
-  // Gestione cambio pagina
   const handlePrevPage = () => setPage((p) => Math.max(1, p - 1));
   const handleNextPage = () => setPage((p) => Math.min(pageCount, p + 1));
 
@@ -300,7 +288,20 @@ export const ConsultazioneIncassi = () => {
             </div>
           </div>
         )}
-        {/* Tipo Pagamento in griglia 2x2 su mobile, label molto grandi */}
+        {/* Dropdown page size: ora sopra Tipo Pagamento su mobile */}
+        <div className="w-full sm:w-auto flex flex-col">
+          <Label>Corse per pagina</Label>
+          <select
+            className="w-full min-w-[80px] border rounded px-2 py-2"
+            value={pageSize}
+            onChange={handlePageSizeChange}
+          >
+            {PAGE_SIZE_OPTIONS.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
+        {/* Tipo Pagamento */}
         <div className="min-w-[150px] flex-1">
           <Label>Tipo Pagamento</Label>
           <RadioGroup
@@ -329,19 +330,6 @@ export const ConsultazioneIncassi = () => {
               <Label htmlFor="globix" className="text-lg font-bold py-2">Globix</Label>
             </div>
           </RadioGroup>
-        </div>
-        {/* Dropdown page size */}
-        <div className="min-w-[120px] flex-1 flex flex-col">
-          <Label>Corse per pagina</Label>
-          <select
-            className="w-full min-w-[80px] border rounded px-2 py-2"
-            value={pageSize}
-            onChange={handlePageSizeChange}
-          >
-            {PAGE_SIZE_OPTIONS.map(opt => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
         </div>
       </div>
       {/* CARDS DEI TOTALI */}

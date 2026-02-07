@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "./SessionContextProvider";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
-import { Trash2, ArrowDown, ArrowUp } from "lucide-react";
+import { Trash2, ArrowDown, ArrowUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 const CARD_STYLE = "flex-1 min-w-[140px] bg-secondary p-4 rounded-lg shadow text-center";
@@ -30,19 +30,26 @@ const TIPO_LABELS: Record<string, string> = {
   tutti: "Tutti",
 };
 
+const PAGE_SIZE_OPTIONS = [10, 50, 100];
+
 export const ConsultazioneIncassi = () => {
-  // Imposta il periodo di default su "oggi"
+  // Filtri
   const [periodo, setPeriodo] = React.useState("oggi");
   const [tipo, setTipo] = React.useState("tutti");
   const [da, setDa] = React.useState(format(new Date(), "yyyy-MM-dd"));
   const [a, setA] = React.useState(format(new Date(), "yyyy-MM-dd"));
+  // Paginazione
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
+  const [totalCount, setTotalCount] = React.useState(0);
+
   const [incassi, setIncassi] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [sortKey, setSortKey] = React.useState<SortKey>("data");
   const [sortDir, setSortDir] = React.useState<SortDir>("desc");
   const session = useSession();
 
-  // Per la responsività del grafico
+  // Responsività grafico
   const [windowWidth, setWindowWidth] = React.useState(window.innerWidth);
   React.useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -50,33 +57,28 @@ export const ConsultazioneIncassi = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Reset pagina quando cambiano i filtri
+  React.useEffect(() => {
+    setPage(1);
+  }, [periodo, tipo, da, a, session]);
+
+  // Caricamento dati paginati
   React.useEffect(() => {
     if (!session) return;
     setLoading(true);
+
+    // Recupera tutti i record dell'utente (solo id, data, importo, tipo) per filtrare lato client
     supabase
       .from("incassi")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("user_id", session.user.id)
-      .range(0, 9999) // <-- Mostra fino a 10.000 corse
-      .then(({ data, error }) => {
+      .then(({ data, error, count }) => {
         setLoading(false);
         if (error) return;
         setIncassi(data || []);
+        setTotalCount(count || 0);
       });
   }, [session]);
-
-  // Funzione per cancellare un record
-  const handleDelete = async (id: string) => {
-    const conferma = window.confirm("Sei sicuro di voler cancellare questo incasso?");
-    if (!conferma) return;
-    const { error } = await supabase.from("incassi").delete().eq("id", id);
-    if (error) {
-      toast.error("Errore nella cancellazione: " + error.message);
-      return;
-    }
-    setIncassi((prev) => prev.filter((i) => i.id !== id));
-    toast.success("Incasso cancellato.");
-  };
 
   // Calcolo intervallo date
   let startDate = new Date();
@@ -100,7 +102,7 @@ export const ConsultazioneIncassi = () => {
     endDate = new Date(a);
   }
 
-  // Filtro e aggregazione
+  // Filtro e aggregazione lato client
   let filtered = incassi
     .filter((i) => {
       const d = typeof i.data === "string" ? parseISO(i.data) : i.data;
@@ -134,6 +136,11 @@ export const ConsultazioneIncassi = () => {
     }
     return sortDir === "asc" ? res : -res;
   });
+
+  // Paginazione: calcola i dati da mostrare
+  const totalFiltered = filtered.length;
+  const pageCount = Math.max(1, Math.ceil(totalFiltered / pageSize));
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const totali = {
     totale: filtered.reduce((sum, i) => sum + Number(i.importo), 0),
@@ -230,6 +237,29 @@ export const ConsultazioneIncassi = () => {
       ? 320
       : 380; // mobile: 380px
 
+  // Funzione per cancellare un record
+  const handleDelete = async (id: string) => {
+    const conferma = window.confirm("Sei sicuro di voler cancellare questo incasso?");
+    if (!conferma) return;
+    const { error } = await supabase.from("incassi").delete().eq("id", id);
+    if (error) {
+      toast.error("Errore nella cancellazione: " + error.message);
+      return;
+    }
+    setIncassi((prev) => prev.filter((i) => i.id !== id));
+    toast.success("Incasso cancellato.");
+  };
+
+  // Gestione cambio pageSize
+  const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setPageSize(Number(e.target.value));
+    setPage(1);
+  };
+
+  // Gestione cambio pagina
+  const handlePrevPage = () => setPage((p) => Math.max(1, p - 1));
+  const handleNextPage = () => setPage((p) => Math.min(pageCount, p + 1));
+
   return (
     <div>
       {/* FILTRI IN ALTO */}
@@ -299,6 +329,19 @@ export const ConsultazioneIncassi = () => {
               <Label htmlFor="globix" className="text-lg font-bold py-2">Globix</Label>
             </div>
           </RadioGroup>
+        </div>
+        {/* Dropdown page size */}
+        <div className="min-w-[120px] flex-1 flex flex-col">
+          <Label>Corse per pagina</Label>
+          <select
+            className="w-full min-w-[80px] border rounded px-2 py-2"
+            value={pageSize}
+            onChange={handlePageSizeChange}
+          >
+            {PAGE_SIZE_OPTIONS.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
         </div>
       </div>
       {/* CARDS DEI TOTALI */}
@@ -379,7 +422,7 @@ export const ConsultazioneIncassi = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {paginated.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="text-center py-4 text-gray-500">
                     Nessun incasso trovato per il periodo selezionato.
@@ -387,7 +430,7 @@ export const ConsultazioneIncassi = () => {
                 </tr>
               ) : (
                 <>
-                  {filtered.map((i) => (
+                  {paginated.map((i) => (
                     <tr key={i.id} className="border-b last:border-b-0 group">
                       <td className="px-3 py-2">
                         {typeof i.data === "string"
@@ -428,6 +471,30 @@ export const ConsultazioneIncassi = () => {
             </tbody>
           </table>
         </div>
+        {/* Paginazione */}
+        {pageCount > 1 && (
+          <div className="flex items-center justify-center gap-4 mt-4">
+            <button
+              onClick={handlePrevPage}
+              disabled={page === 1}
+              className="px-2 py-1 rounded border bg-white hover:bg-gray-100 disabled:opacity-50"
+              aria-label="Pagina precedente"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <span>
+              Pagina {page} di {pageCount}
+            </span>
+            <button
+              onClick={handleNextPage}
+              disabled={page === pageCount}
+              className="px-2 py-1 rounded border bg-white hover:bg-gray-100 disabled:opacity-50"
+              aria-label="Pagina successiva"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        )}
       </div>
       {/* Pie chart sotto la tabella */}
       <div className="mt-8 flex flex-col items-center w-full">

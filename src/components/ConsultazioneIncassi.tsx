@@ -315,12 +315,12 @@ export const ConsultazioneIncassi = () => {
   return (
     <div>
       {/* Pulsante reset filtri */}
-      <div className="flex justify-end mb-2">
+      <div className="flex justify-center mb-2 mt-4">
         <Button
           variant="outline"
           size="sm"
           onClick={handleResetFilters}
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 w-full max-w-[300px] sm:max-w-none sm:w-auto"
         >
           <RotateCcw size={16} className="mr-1" />
           Reset filtri

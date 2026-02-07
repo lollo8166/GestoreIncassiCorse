@@ -84,6 +84,15 @@ const DEFAULT_FILTERS = {
   pageSize: 10,
 };
 
+type TotaliAggregati = {
+  totale: number;
+  corse: number;
+  contanti: number;
+  pos: number;
+  app: number;
+  globix: number;
+};
+
 export const ConsultazioneIncassi = () => {
   // Inizializza i filtri da localStorage
   const initial = getInitialFilters();
@@ -95,13 +104,23 @@ export const ConsultazioneIncassi = () => {
 
   // Paginazione
   const [page, setPage] = React.useState(1);
-  const [totalCount, setTotalCount] = React.useState(0);
 
   const [incassi, setIncassi] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [sortKey, setSortKey] = React.useState<SortKey>("data");
   const [sortDir, setSortDir] = React.useState<SortDir>("desc");
   const session = useSession();
+
+  // Totali aggregati
+  const [totali, setTotali] = React.useState<TotaliAggregati>({
+    totale: 0,
+    corse: 0,
+    contanti: 0,
+    pos: 0,
+    app: 0,
+    globix: 0,
+  });
+  const [loadingTotali, setLoadingTotali] = React.useState(false);
 
   // Responsività grafico
   const [windowWidth, setWindowWidth] = React.useState(window.innerWidth);
@@ -120,23 +139,6 @@ export const ConsultazioneIncassi = () => {
   React.useEffect(() => {
     setPage(1);
   }, [periodo, tipi, da, a, session, pageSize]);
-
-  // Caricamento dati paginati
-  React.useEffect(() => {
-    if (!session) return;
-    setLoading(true);
-
-    supabase
-      .from("incassi")
-      .select("*", { count: "exact" })
-      .eq("user_id", session.user.id)
-      .then(({ data, error, count }) => {
-        setLoading(false);
-        if (error) return;
-        setIncassi(data || []);
-        setTotalCount(count || 0);
-      });
-  }, [session]);
 
   // Calcolo intervallo date
   let startDate = new Date();
@@ -160,24 +162,105 @@ export const ConsultazioneIncassi = () => {
     endDate = new Date(a);
   }
 
-  // Filtro e aggregazione lato client
-  let filtered = incassi.filter((i) => {
-    const d = typeof i.data === "string" ? parseISO(i.data) : i.data;
-    let inRange = true;
+  // Query aggregata per i totali (card e grafico)
+  React.useEffect(() => {
+    if (!session) return;
+    setLoadingTotali(true);
+
+    // Costruisci i filtri
+    let query = supabase
+      .from("incassi")
+      .select("tipo, importo", { count: "exact" })
+      .eq("user_id", session.user.id);
+
+    // Filtro periodo
     if (filterOggi) {
-      inRange = isSameDay(d, new Date());
+      const today = format(new Date(), "yyyy-MM-dd");
+      query = query.eq("data", today);
     } else if (filterManuale) {
-      const dDate = onlyDate(d);
-      const start = onlyDate(startDate);
-      const end = onlyDate(endDate);
-      inRange = dDate >= start && dDate <= end;
+      query = query.gte("data", format(startDate, "yyyy-MM-dd")).lte("data", format(endDate, "yyyy-MM-dd"));
     } else if (useDateFilter) {
-      inRange = isWithinInterval(d, { start: startDate, end: endDate });
+      query = query.gte("data", format(startDate, "yyyy-MM-dd")).lte("data", format(endDate, "yyyy-MM-dd"));
     }
-    // Multi-select: se tipi è vuoto o contiene tutte le opzioni, mostra tutto
-    if (!tipi || tipi.length === 0 || tipi.length === TIPO_OPTIONS.length) return inRange;
-    return inRange && tipi.includes(i.tipo);
-  });
+
+    // Filtro tipo pagamento
+    if (tipi && tipi.length > 0 && tipi.length < TIPO_OPTIONS.length) {
+      query = query.in("tipo", tipi);
+    }
+
+    // Scarica TUTTI i record (in batch da 1000) solo per aggregazione
+    // (workaround: scarica a blocchi e aggrega lato client, ma solo i campi necessari)
+    // In alternativa, se la tabella diventa molto grande, meglio una edge function.
+
+    // Funzione ricorsiva per scaricare tutti i dati a blocchi di 1000
+    const fetchAll = async (from: number, acc: any[]): Promise<any[]> => {
+      const { data, error } = await query.range(from, from + 999);
+      if (error) return acc;
+      if (!data || data.length === 0) return acc;
+      if (data.length < 1000) return [...acc, ...data];
+      return fetchAll(from + 1000, [...acc, ...data]);
+    };
+
+    fetchAll(0, []).then(allData => {
+      // Aggrega i totali
+      let totale = 0;
+      let corse = 0;
+      let contanti = 0;
+      let pos = 0;
+      let app = 0;
+      let globix = 0;
+      for (const i of allData) {
+        const imp = Number(i.importo) || 0;
+        totale += imp;
+        corse += 1;
+        if (i.tipo === "contanti") contanti += imp;
+        if (i.tipo === "pos") pos += imp;
+        if (i.tipo === "app") app += imp;
+        if (i.tipo === "globix") globix += imp;
+      }
+      setTotali({ totale, corse, contanti, pos, app, globix });
+      setLoadingTotali(false);
+    });
+  // eslint-disable-next-line
+  }, [session, periodo, tipi, da, a]);
+
+  // Caricamento dati paginati (ultimi 1000 record)
+  React.useEffect(() => {
+    if (!session) return;
+    setLoading(true);
+
+    let query = supabase
+      .from("incassi")
+      .select("*", { count: "exact" })
+      .eq("user_id", session.user.id)
+      .order("data", { ascending: false })
+      .limit(1000);
+
+    // Filtro periodo
+    if (filterOggi) {
+      const today = format(new Date(), "yyyy-MM-dd");
+      query = query.eq("data", today);
+    } else if (filterManuale) {
+      query = query.gte("data", format(startDate, "yyyy-MM-dd")).lte("data", format(endDate, "yyyy-MM-dd"));
+    } else if (useDateFilter) {
+      query = query.gte("data", format(startDate, "yyyy-MM-dd")).lte("data", format(endDate, "yyyy-MM-dd"));
+    }
+
+    // Filtro tipo pagamento
+    if (tipi && tipi.length > 0 && tipi.length < TIPO_OPTIONS.length) {
+      query = query.in("tipo", tipi);
+    }
+
+    query.then(({ data, error, count }) => {
+      setLoading(false);
+      if (error) return;
+      setIncassi(data || []);
+    });
+  // eslint-disable-next-line
+  }, [session, periodo, tipi, da, a]);
+
+  // Filtro e aggregazione lato client SOLO per la tabella (non più per le card)
+  let filtered = incassi;
 
   // Ordinamento
   filtered = filtered.sort((a, b) => {
@@ -198,15 +281,6 @@ export const ConsultazioneIncassi = () => {
   const totalFiltered = filtered.length;
   const pageCount = Math.max(1, Math.ceil(totalFiltered / pageSize));
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
-
-  const totali = {
-    totale: filtered.reduce((sum, i) => sum + Number(i.importo), 0),
-    contanti: filtered.filter(i => i.tipo === "contanti").reduce((sum, i) => sum + Number(i.importo), 0),
-    pos: filtered.filter(i => i.tipo === "pos").reduce((sum, i) => sum + Number(i.importo), 0),
-    app: filtered.filter(i => i.tipo === "app").reduce((sum, i) => sum + Number(i.importo), 0),
-    globix: filtered.filter(i => i.tipo === "globix").reduce((sum, i) => sum + Number(i.importo), 0),
-    corse: filtered.length,
-  };
 
   // Dati per il grafico a torta
   const pieData = [
@@ -441,30 +515,42 @@ export const ConsultazioneIncassi = () => {
         <div className="w-full max-w-xs flex flex-col sm:flex-row gap-4">
           <div className={CARD_STYLE}>
             <div className="text-lg font-semibold">Totale Incassato</div>
-            <div className="text-2xl font-bold mt-2">€ {totali.totale.toFixed(2)}</div>
+            <div className="text-2xl font-bold mt-2">
+              {loadingTotali ? "..." : `€ ${totali.totale.toFixed(2)}`}
+            </div>
           </div>
           <div className={CARD_STYLE}>
             <div className="text-lg font-semibold">Totale Corse</div>
-            <div className="text-2xl font-bold mt-2">{totali.corse}</div>
+            <div className="text-2xl font-bold mt-2">
+              {loadingTotali ? "..." : totali.corse}
+            </div>
           </div>
         </div>
         {/* Griglia 2x2 per i 4 metodi */}
         <div className="grid grid-cols-2 grid-rows-2 gap-3 w-full max-w-xs">
           <div className={SMALL_CARD_STYLE}>
             <div className="text-lg font-bold py-2">Contanti</div>
-            <div className="text-base font-semibold mt-1">€ {totali.contanti.toFixed(2)}</div>
+            <div className="text-base font-semibold mt-1">
+              {loadingTotali ? "..." : `€ ${totali.contanti.toFixed(2)}`}
+            </div>
           </div>
           <div className={SMALL_CARD_STYLE}>
             <div className="text-lg font-bold py-2">POS</div>
-            <div className="text-base font-semibold mt-1">€ {totali.pos.toFixed(2)}</div>
+            <div className="text-base font-semibold mt-1">
+              {loadingTotali ? "..." : `€ ${totali.pos.toFixed(2)}`}
+            </div>
           </div>
           <div className={SMALL_CARD_STYLE}>
             <div className="text-lg font-bold py-2">APP</div>
-            <div className="text-base font-semibold mt-1">€ {totali.app.toFixed(2)}</div>
+            <div className="text-base font-semibold mt-1">
+              {loadingTotali ? "..." : `€ ${totali.app.toFixed(2)}`}
+            </div>
           </div>
           <div className={SMALL_CARD_STYLE}>
             <div className="text-lg font-bold py-2">Globix</div>
-            <div className="text-base font-semibold mt-1">€ {totali.globix.toFixed(2)}</div>
+            <div className="text-base font-semibold mt-1">
+              {loadingTotali ? "..." : `€ ${totali.globix.toFixed(2)}`}
+            </div>
           </div>
         </div>
       </div>

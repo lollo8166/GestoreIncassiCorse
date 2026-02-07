@@ -32,15 +32,54 @@ const TIPO_LABELS: Record<string, string> = {
 
 const PAGE_SIZE_OPTIONS = [10, 50, 100];
 
+// Chiave per localStorage
+const FILTERS_KEY = "incassi_filters_v1";
+
+function getInitialFilters() {
+  try {
+    const saved = localStorage.getItem(FILTERS_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // fallback ai valori di default se mancano
+      return {
+        periodo: parsed.periodo ?? "oggi",
+        tipo: parsed.tipo ?? "tutti",
+        da: parsed.da ?? format(new Date(), "yyyy-MM-dd"),
+        a: parsed.a ?? format(new Date(), "yyyy-MM-dd"),
+        pageSize: parsed.pageSize ?? 10,
+      };
+    }
+  } catch {
+    // ignora errori
+  }
+  return {
+    periodo: "oggi",
+    tipo: "tutti",
+    da: format(new Date(), "yyyy-MM-dd"),
+    a: format(new Date(), "yyyy-MM-dd"),
+    pageSize: 10,
+  };
+}
+
+function saveFilters(filters: { periodo: string; tipo: string; da: string; a: string; pageSize: number }) {
+  try {
+    localStorage.setItem(FILTERS_KEY, JSON.stringify(filters));
+  } catch {
+    // ignora errori
+  }
+}
+
 export const ConsultazioneIncassi = () => {
-  // Filtri
-  const [periodo, setPeriodo] = React.useState("oggi");
-  const [tipo, setTipo] = React.useState("tutti");
-  const [da, setDa] = React.useState(format(new Date(), "yyyy-MM-dd"));
-  const [a, setA] = React.useState(format(new Date(), "yyyy-MM-dd"));
+  // Inizializza i filtri da localStorage
+  const initial = getInitialFilters();
+  const [periodo, setPeriodo] = React.useState(initial.periodo);
+  const [tipo, setTipo] = React.useState(initial.tipo);
+  const [da, setDa] = React.useState(initial.da);
+  const [a, setA] = React.useState(initial.a);
+  const [pageSize, setPageSize] = React.useState(initial.pageSize);
+
   // Paginazione
   const [page, setPage] = React.useState(1);
-  const [pageSize, setPageSize] = React.useState(10);
   const [totalCount, setTotalCount] = React.useState(0);
 
   const [incassi, setIncassi] = React.useState<any[]>([]);
@@ -57,10 +96,15 @@ export const ConsultazioneIncassi = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Salva i filtri ogni volta che cambiano
+  React.useEffect(() => {
+    saveFilters({ periodo, tipo, da, a, pageSize });
+  }, [periodo, tipo, da, a, pageSize]);
+
   // Reset pagina quando cambiano i filtri
   React.useEffect(() => {
     setPage(1);
-  }, [periodo, tipo, da, a, session]);
+  }, [periodo, tipo, da, a, session, pageSize]);
 
   // Caricamento dati paginati
   React.useEffect(() => {
